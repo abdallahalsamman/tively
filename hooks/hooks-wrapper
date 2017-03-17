@@ -19,8 +19,7 @@ NATIVE_HOOKS_DIR=$(git rev-parse --show-toplevel)/.git/hooks
 # We don't want to bail at the first failure, as the user might
 # then bypass the hooks without knowing about additional issues.
 
-for hook in $CUSTOM_HOOKS_DIR/$(basename $0)-*; do
-  echo $hook
+for hook in $CUSTOM_HOOKS_DIR/$(basename $0); do
   test -x "$hook" || continue
   out=`$hook "$@"`
   exitcodes+=($?)
@@ -29,7 +28,6 @@ done
 
 # check if there was a local hook that was moved previously
 if [ -f "$NATIVE_HOOKS_DIR/$hookname.local" ]; then
-    echo $NATIVE_HOOKS_DIR/$hookname.local
     out=`$NATIVE_HOOKS_DIR/$hookname.local "$@"`
     exitcodes+=($?)
     echo "$out"
