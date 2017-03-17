@@ -8,7 +8,7 @@
 # http://osdir.com/ml/git/2009-01/msg00308.html
 #
 # assumes your scripts are located at <repo-root>/bin/git/hooks
-
+echo hello
 exitcodes=()
 hookname=`basename $0`
 # our special hooks folder
