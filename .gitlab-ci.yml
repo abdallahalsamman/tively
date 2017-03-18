@@ -1,0 +1,3 @@
+validate_commit_msgs:
+  script:
+    - 
