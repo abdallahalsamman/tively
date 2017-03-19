@@ -1,0 +1,10 @@
+validate_commit_msgs:
+  script:
+    - git submodule update --init
+    - >
+      git log origin/$CI_BUILD_REF_NAME --oneline --not origin/master | while read -r line; do 
+        if [ "`echo $line | grep -oEi '\/spend\s([0-9]{0,2}[h][0-9]{1,2}[m]|[0-9]{0,2}[m])$'`"  = "" ]; then
+          echo "your commit doesn't have the time you spent in it";
+          exit 1;
+        fi;
+      done;
