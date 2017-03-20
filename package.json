@@ -1,0 +1,19 @@
+{
+  "name": "githooks",
+  "version": "0.0.0",
+  "description": "`sh hooks/init-hooks`",
+  "main": "app.tivly.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://abdullah-s@gitlab.com/tivly/githooks.git"
+  },
+  "author": "",
+  "license": "BSD-2-Clause",
+  "dependencies": {
+    "express": "~4.15.2",
+    "request": "~2.81.0"
+  }
+}
