@@ -3,6 +3,7 @@ var app = express()
 var request = require('request')
 var util = require('util')
 var fs = require('fs');
+// var async = require('async')
 
 const GITLAB_CI_YML_CONTENT = fs.readFileSync('gitlab-pipeline/gitlab-ci.yml').toString('base64')
 const REDIRECT_URL = "http://bahama-agenda-3000.codio.io/oauth-gitlab"
@@ -118,4 +119,5 @@ app.get('/hook-project', function(req, res){
 
 app.set('view engine', 'pug')
 app.set('views', 'views')
+app.use(express.static('static'))
 app.listen(3000)
