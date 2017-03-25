@@ -2,10 +2,12 @@ var express = require('express')
 var app = express()
 var request = require('request')
 var util = require('util')
-var fs = require('fs');
-// var async = require('async')
+var fs = require('fs')
+var sqlite3 = require('sqlite3').verbose()
+var db = new sqlite3.Database('db.sqlite3')
+db.run('CREATE TABLE IF NOT EXISTS projects (project_id TEXT, access_token TEXT)')
 
-const GITLAB_CI_YML_CONTENT = fs.readFileSync('gitlab-pipeline/gitlab-ci.yml').toString('base64')
+const GITLAB_CI_YML_CONTENT = fs.readFileSync('demo_code/gitlab-pipeline/gitlab-ci.yml').toString('base64')
 const REDIRECT_URL = "http://bahama-agenda-3000.codio.io/oauth-gitlab"
 const CLIENT_SECRET = "b713ec666614a6f06ae2c15d06117cf8d76a33398fa9108e69653665b7f5845b"
 const CLIENT_ID = "6b7979bc2dbd78444592e30d624aa37cc0fc2c9145f3af44f1f70f5c4adbf21d"
@@ -75,6 +77,7 @@ var main = function(url, req, res){
   }else if(url == '/hook-project'){
     params = req.query
     console.log('INFO: got request to hook project')
+    db.run('INSERT INTO projects VALUES ("'+params.proj_id+'", "'+params.access_token+'")')
     request({
         method: "PUT",
         url: "https://gitlab.com/api/v4/projects/"+params.proj_id,
@@ -89,6 +92,23 @@ var main = function(url, req, res){
             console.log('ERROR: can\'t update project settings to not merge unless pipelines succeed')
         }else{
             console.log('INFO: changed project settings to not merge unless pipelines succeed')
+            
+            request({
+                method: "POST",
+                headers: {
+                  'Authorization': "Bearer " + params.access_token,
+                  'User-Agent': 'Tivly 1.0 Beta'
+                },
+                url: "https://gitlab.com/api/v4/projects/"+params.proj_id+"/hooks?url=http://bahama-agenda-3001.codio.io/&merge_requests_events=true&enable_ssl_verification=false"
+            }, function(err, resp, add_hook_body){
+                debugger
+                if (err){
+                    console.log("ERROR: couldn't add tively webhook to project")
+                }else{
+                    console.log("INFO: added tively webhook to project")
+                }
+            })
+            
             request({
                 method: "POST",
                 headers: {

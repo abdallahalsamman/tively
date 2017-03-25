@@ -15,6 +15,10 @@
   "dependencies": {
     "express": "~4.15.2",
     "request": "~2.81.0",
-    "pug": "~2.0.0-beta11"
+    "pug": "~2.0.0-beta11",
+    "google-auth-library": "~0.10.0",
+    "async": "~2.1.5",
+    "googleapis": "~18.0.0",
+    "sqlite3": "~3.1.8"
   }
 }
