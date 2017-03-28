@@ -20,6 +20,35 @@ var make_api_req = function(method, url, acc){
   return acc
 }
 
+var extract_commits_spend_time = function(commits){
+    commits_minutes_spend = commits.map(function(commit){
+        spend_time = commit.message.match(/\/spend\s([0-9]{0,}[h][0-9]{0,}[m]|[0-9]{0,}[hm])/)
+        if (spend_time && spend_time[1]){
+          hours = '0'
+          minutes = '0'
+          if(spend_time[1].indexOf('m') != -1 && spend_time[1].indexOf('h') != -1) {
+            hour_split = spend_time[1].split('h')
+            hours = hour_split[0]
+            minutes = hour_split[1].split('m')[0]
+          } else if (spend_time[1].indexOf('h') != -1) {
+            hours = spend_time[1].split('h')[0]
+          }else if(spend_time[1].indexOf('m') != -1){
+            minutes = spend_time[1].split('m')[0]
+          }
+          
+          return parseInt(hours) * 60 + parseInt(minutes)
+        }
+    })
+        
+    minutes_added = commits_minutes_spend.reduce(function(acc, curr){
+        return curr + acc
+    }, 0)
+    
+    hours = Math.floor(minutes_added / 60)
+    minutes = Math.floor(minutes_added % 60)
+    return util.format('%dh%dm', hours, minutes)
+}
+
 var parse_data_from_issue_req = function(issue_data, issue_time_entries){
   return {
     author: issue_data.author.username,
@@ -39,7 +68,8 @@ var parse_data_from_wh_req = function(data){
     date: data.object_attributes.created_at,
     proj_id: data.object_attributes.target_project_id || null,
     issue_nb: data.object_attributes.description.match("((?:[Cc]los(?:e[sd]?|ing)|[Ff]ix(?:e[sd]|ing)?|[Rr]esolv(?:e[sd]?|ing))(:?) +(?:(?:issues? +)?#(\\d+)(?:(?:, *| +and +)?)|([A-Z][A-Z0-9_]+-\\d+))+)") || null,
-    mr_nb: data.object_attributes.id
+    id: data.object_attributes.id,
+    iid: data.object_attributes.iid
   }
 }
 
@@ -69,7 +99,7 @@ var execute_on_full_recieve = function(stream, callback){
 
 var main = function( post ) {
   parsed_post = JSON.parse( post )
-  if ( parsed_post.object_kind == "merge_request" && parsed_post.object_attributes.state == "merged"){
+  if ( parsed_post.object_kind == "merge_request" && parsed_post.object_attributes.state == "merged" ){
     console.log("INFO: Got merge request")
     async.waterfall([
       function( callback ){
@@ -97,24 +127,57 @@ var main = function( post ) {
                 wh_data.issue_nb[3] ),
               {} )
             , function( error, response, body ) {
-                request(
-                  make_api_req (
-                    "GET",
-                    util.format(
-                      "/projects/%d/issues/%d/time_stats",
-                      wh_data.proj_id,  
-                      wh_data.issue_nb[3] ),
-                    {} ),
-                  function(error, response, boddy){
-                    callback( null, body, boddy, wh_data )  
-                  })
+                
+                callback( null, JSON.parse(body), wh_data )
             } )
         }else{
           console.log('Error: Merge request doesn\'t have fixed issue in description')
         }
       },
-      function( issue_body, issue_time_entries_body, wh_data, callback ){
-        issue_data = JSON.parse( issue_body )
+      function ( issue_data, wh_data, callback ){
+          request(
+            make_api_req (
+                "GET",
+                util.format(
+                    "/projects/%d/merge_requests/%d/commits",
+                    wh_data.proj_id,  
+                    wh_data.iid ),
+                {} ),
+            function(error, response, body){
+                commits = JSON.parse(body)
+                human_spend_times = extract_commits_spend_time(commits)
+                callback( null, issue_data, human_spend_times, wh_data )
+          } )
+      },
+      function( issue_data, human_spend_times, wh_data, callback ){
+          request(make_api_req(
+              "POST",
+              util.format(
+                  "/projects/%d/issues/%d/notes",
+                  wh_data.proj_id,
+                  issue_data.id
+              ), {
+                  body: "body=%2Fspend+"+human_spend_times
+              } ), function(error, response, body){
+                console.log('INFO: Added spend time from commits to issue')
+                callback( null, issue_data, wh_data )
+          } )
+      },
+      function ( issue_data, wh_data, callback ){
+          request(
+            make_api_req (
+                "GET",
+                util.format(
+                    "/projects/%d/issues/%d/time_stats",
+                    wh_data.proj_id,  
+                    wh_data.issue_nb[3] ),
+                {} ),
+            function(error, response, body){
+                console.log('INFO: Got issue\'s time stats')
+                callback( null, issue_data, body, wh_data )
+          } )
+      },
+      function( issue_data, issue_time_entries_body, wh_data, callback ){
         issue_time_entries = JSON.parse( issue_time_entries_body )
         google_auth(function(auth){
           console.log('INFO: Got google auth')
