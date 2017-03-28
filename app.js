@@ -20,13 +20,15 @@ var make_api_req = function(method, url, acc){
   return acc
 }
 
-var parse_data_from_issue_req = function(data){
+var parse_data_from_issue_req = function(issue_data, issue_time_entries){
   return {
-    author: data.author.username,
-    created_at: data.created_at,
-    labels: data.labels,
-    business_req: data.description.match(/\# Business Requirement\s+(.*)/i)[1],
-    milestone: data.milestone
+    author: issue_data.author.username,
+    created_at: new Date(issue_data.created_at).toDateString(),
+    labels: issue_data.labels,
+    business_req: issue_data.description.match(/\# Business Requirement\s+(.*)/i)[1],
+    time_spent: issue_time_entries.human_total_time_spent,
+    time_estimate: issue_time_entries.human_time_estimate,
+    milestone: issue_data.milestone
   }
 }
 
@@ -35,7 +37,6 @@ var parse_data_from_wh_req = function(data){
     object_kind: data.object_kind,
     mr_author_username: data.user.username,
     date: data.object_attributes.created_at,
-    time_spent: data.object_attributes.time_logs,
     proj_id: data.object_attributes.target_project_id || null,
     issue_nb: data.object_attributes.description.match("((?:[Cc]los(?:e[sd]?|ing)|[Ff]ix(?:e[sd]|ing)?|[Rr]esolv(?:e[sd]?|ing))(:?) +(?:(?:issues? +)?#(\\d+)(?:(?:, *| +and +)?)|([A-Z][A-Z0-9_]+-\\d+))+)") || null,
     mr_nb: data.object_attributes.id
@@ -49,10 +50,8 @@ var make_row = function(issue_data, wh_data){
       wh_data.mr_author_username,
       issue_data.business_req,
       issue_data.labels.join(', '),
-      issue_data.milestone.title,
-      wh_data.time_spent.reduce(function(acc, log){
-        return acc + log.time_spent / 60
-      }, 0) + "min",
+      issue_data.milestone && issue_data.milestone.title || '',
+      issue_data.time_spent + '/' + issue_data.time_estimate,
       issue_data.created_at,
     ]
   ]
@@ -70,40 +69,60 @@ var execute_on_full_recieve = function(stream, callback){
 
 var main = function( post ) {
   parsed_post = JSON.parse( post )
-  if ( parsed_post.object_kind == "merge_request" ){
+  if ( parsed_post.object_kind == "merge_request" && parsed_post.object_attributes.state == "merged"){
+    console.log("INFO: Got merge request")
     async.waterfall([
       function( callback ){
         db.get(
           'SELECT * FROM projects WHERE project_id = "'+parsed_post.object_attributes.source_project_id+'"', 
           function(err, row){
-            ACCESS_TOKEN = row.access_token 
-            callback( null )
+            if (row && row.access_token){
+              ACCESS_TOKEN = row.access_token 
+              console.log("INFO: Got access token")
+              callback( null )
+            }else{
+              console.log('Error: Couldn\'t get access token')   
+            }
           })
       },
       function( callback ) {
         var wh_data = parse_data_from_wh_req( parsed_post )
-        console.log("got "+wh_data.object_kind)
-        if ( wh_data.object_kind == "merge_request" && wh_data.proj_id && wh_data.issue_nb ){
+        if ( wh_data.proj_id && wh_data.issue_nb ){
           request(
             make_api_req (
               "GET",
               util.format(
                 "/projects/%d/issues/%d",
                 wh_data.proj_id,  
-                wh_data.issue_nb[3] )
-            )
-            , function( eroor, response, body ) {
-              callback( null, body, wh_data )
+                wh_data.issue_nb[3] ),
+              {} )
+            , function( error, response, body ) {
+                request(
+                  make_api_req (
+                    "GET",
+                    util.format(
+                      "/projects/%d/issues/%d/time_stats",
+                      wh_data.proj_id,  
+                      wh_data.issue_nb[3] ),
+                    {} ),
+                  function(error, response, boddy){
+                    callback( null, body, boddy, wh_data )  
+                  })
             } )
         }else{
-          console.log('invalid webhook request')
+          console.log('Error: Merge request doesn\'t have fixed issue in description')
         }
       },
-      function( body, wh_data, callback ){
-        issue_data = parse_data_from_issue_req ( JSON.parse( body ) )
+      function( issue_body, issue_time_entries_body, wh_data, callback ){
+        issue_data = JSON.parse( issue_body )
+        issue_time_entries = JSON.parse( issue_time_entries_body )
         google_auth(function(auth){
-          callback(null, issue_data, wh_data, auth)
-        })
+          console.log('INFO: Got google auth')
+          callback (
+              null,
+              parse_data_from_issue_req(issue_data, issue_time_entries),
+              wh_data,
+              auth ) } )
       },
       function(issue_data, wh_data, auth ){
         var sheets = google.sheets('v4');
@@ -117,24 +136,29 @@ var main = function( post ) {
             values: make_row(issue_data, wh_data)
           }
         }
+        console.log('INFO: Adding row to spreadsheet')
         sheets.spreadsheets.values.append(request)
 
       }
     ])
   }else if(parsed_post.object_kind == "issue"){
     if(["reopened", "opened"].indexOf(parsed_post.object_attributes.state) != -1){
+      console.log("INFO: Got opened issue")
       var business_req_matches = parsed_post.object_attributes.description.match(/\# Business Requirement\s+(.*)/i)
       if(business_req_matches && business_req_matches[1]){
+        console.log('INFO: Issue got business requirement')
         // PASS
       }else{
         // CLOSE ISSUE AND COMMENT WITH SUITABLE MESSAGE
+        console.log('INFO: Issue got NO business requirement')
         async.waterfall([
           function( callback ){
             db.get(
               'SELECT * FROM projects WHERE project_id = "'+parsed_post.object_attributes.project_id+'"', 
               function(err, row){
-                ACCESS_TOKEN = row.access_token 
-                callback()
+                ACCESS_TOKEN = row.access_token
+                console.log("INFO: Got access token")
+                callback( null )
               })
           },
           function( callback ){
@@ -146,6 +170,7 @@ var main = function( post ) {
                   parsed_post.object_attributes.project_id,
                   parsed_post.object_attributes.iid
             ), {}), function(error, response, body){
+                  console.log("INFO: Closed issue")
                   request(make_api_req(
                     "POST",
                     util.format(
@@ -154,7 +179,9 @@ var main = function( post ) {
                       parsed_post.object_attributes.id
                   ), {
                     body: "body=Business Requirement Missing, please use the tively issue template"
-                  } ) )
+                  } ), function(error, response, body){
+                      console.log('INFO: Comment error on issue page')
+                  } )
               } )
           }
         ])
