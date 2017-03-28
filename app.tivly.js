@@ -13,6 +13,7 @@ const TIVLY_ISSUE_TEMPLATE_CONTENT = fs.readFileSync('demo_code/issue_templates/
 const REDIRECT_URL = "http://bahama-agenda-3000.codio.io/oauth-gitlab"
 const CLIENT_SECRET = "b713ec666614a6f06ae2c15d06117cf8d76a33398fa9108e69653665b7f5845b"
 const CLIENT_ID = "6b7979bc2dbd78444592e30d624aa37cc0fc2c9145f3af44f1f70f5c4adbf21d"
+const WEBHOOK_URL = "http://bahama-agenda-3001.codio.io/"
 
 var make_api_set_status_req = function(owner, repo_name, commit_sha, data){
   return {
@@ -101,9 +102,11 @@ var main = function(url, req, res){
                   'Authorization': "Bearer " + params.access_token,
                   'User-Agent': 'Tivly 1.0 Beta'
                 },
-                url: "https://gitlab.com/api/v4/projects/"+params.proj_id+"/hooks?url=http://bahama-agenda-3001.codio.io/&merge_requests_events=true&issues_events=true&push_events=false&enable_ssl_verification=false"
-            }, function(err, resp, add_hook_body){
-                debugger
+                url: util.format(
+                    "https://gitlab.com/api/v4/projects/%d/hooks?url=%s&merge_requests_events=true&issues_events=true&push_events=false&enable_ssl_verification=false",
+                    params.proj_id,
+                    WEBHOOK_URL
+            ) }, function(err, resp, add_hook_body){
                 if (err){
                     console.log("ERROR: couldn't add tively webhook to project")
                 }else{
