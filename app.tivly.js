@@ -8,6 +8,8 @@ var db = new sqlite3.Database('db.sqlite3')
 db.run('CREATE TABLE IF NOT EXISTS projects (project_id TEXT, access_token TEXT)')
 
 const GITLAB_CI_YML_CONTENT = fs.readFileSync('demo_code/gitlab-pipeline/gitlab-ci.yml').toString('base64')
+const TIVLY_ISSUE_TEMPLATE_CONTENT = fs.readFileSync('demo_code/issue_templates/tivly.md').toString('base64')
+
 const REDIRECT_URL = "http://bahama-agenda-3000.codio.io/oauth-gitlab"
 const CLIENT_SECRET = "b713ec666614a6f06ae2c15d06117cf8d76a33398fa9108e69653665b7f5845b"
 const CLIENT_ID = "6b7979bc2dbd78444592e30d624aa37cc0fc2c9145f3af44f1f70f5c4adbf21d"
@@ -99,7 +101,7 @@ var main = function(url, req, res){
                   'Authorization': "Bearer " + params.access_token,
                   'User-Agent': 'Tivly 1.0 Beta'
                 },
-                url: "https://gitlab.com/api/v4/projects/"+params.proj_id+"/hooks?url=http://bahama-agenda-3001.codio.io/&merge_requests_events=true&enable_ssl_verification=false"
+                url: "https://gitlab.com/api/v4/projects/"+params.proj_id+"/hooks?url=http://bahama-agenda-3001.codio.io/&merge_requests_events=true&issues_events=true&push_events=false&enable_ssl_verification=false"
             }, function(err, resp, add_hook_body){
                 debugger
                 if (err){
@@ -121,6 +123,16 @@ var main = function(url, req, res){
                     console.log("ERROR: couldn't create .gitlab-ci.yml pipeline config")
                 }else{
                     console.log("SUCCESS: created .gitlab-ci.yml pipeline config file")
+                    request({
+                      method: "POST",
+                      headers: {
+                        'Authorization': "Bearer " + params.access_token,
+                        'User-Agent': 'Tivly 1.0 Beta'
+                      },
+                      url: "https://gitlab.com/api/v4/projects/"+params.proj_id+"/repository/files/.gitlab%2Fissue_templates%2FTivly.md?branch=master&content="+ TIVLY_ISSUE_TEMPLATE_CONTENT +"&commit_message=Setup%20Tivly%20Issue%20Templates&encoding=base64"
+                    }, function(error, response, body){
+                      console.log("SUCCESS: created .gitlab/issue_templates/Tivly.md issue template")
+                    } )
                     res.send('SUCCESS')
                 }
             })

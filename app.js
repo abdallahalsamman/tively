@@ -2,31 +2,30 @@ var util = require('util')
 var express = require('express')
 var app = express()
 var http = require('http')
+var request = require('request')
 var async = require('async')
 var google = require('googleapis');
 var google_auth = require('./quickstart')
 var sqlite3 = require('sqlite3').verbose()
 var db = new sqlite3.Database('db.sqlite3')
 
-const HOST = "gitlab.com"
+const HOST = "https://gitlab.com"
 const SPREADSHEET_ID = "1CYdoGIl6aBTsJIuFiF2dzD_nx-GXzsxuUr-yFxlBqrA"
-var PRIVATE_TOKEN;
+var ACCESS_TOKEN;
 
-var make_api_get_issue_req = function(proj_id, issue_id){
-  return {
-    host: HOST,
-    path: util.format("/api/v4/projects/%d/issues/%d", proj_id, issue_id),
-    headers: {'PRIVATE-TOKEN': PRIVATE_TOKEN}
-  }
+var make_api_req = function(method, url, acc){
+  acc["method"] = method
+  acc["url"] = HOST+"/api/v4"+url
+  acc["headers"] = { 'Authorization': 'Bearer '+ACCESS_TOKEN }
+  return acc
 }
 
 var parse_data_from_issue_req = function(data){
   return {
     author: data.author.username,
     created_at: data.created_at,
-    description: data.description,
     labels: data.labels,
-    business_req: data.description,
+    business_req: data.description.match(/\# Business Requirement\s+(.*)/i)[1],
     milestone: data.milestone
   }
 }
@@ -48,7 +47,7 @@ var make_row = function(issue_data, wh_data){
     [
       wh_data.issue_nb[3],
       wh_data.mr_author_username,
-      issue_data.description,
+      issue_data.business_req,
       issue_data.labels.join(', '),
       issue_data.milestone.title,
       wh_data.time_spent.reduce(function(acc, log){
@@ -77,7 +76,7 @@ var main = function( post ) {
         db.get(
           'SELECT * FROM projects WHERE project_id = "'+parsed_post.object_attributes.source_project_id+'"', 
           function(err, row){
-            PRIVATE_TOKEN = row.access_token 
+            ACCESS_TOKEN = row.access_token 
             callback( null )
           })
       },
@@ -85,21 +84,25 @@ var main = function( post ) {
         var wh_data = parse_data_from_wh_req( parsed_post )
         console.log("got "+wh_data.object_kind)
         if ( wh_data.object_kind == "merge_request" && wh_data.proj_id && wh_data.issue_nb ){
-          http.get(
-            make_api_get_issue_req ( wh_data.proj_id, wh_data.issue_nb[3] )
-            , function( res ) {
-              execute_on_full_recieve (
-                res
-                , function( data ){
-                  callback( null, data, wh_data ) } ) } )
+          request(
+            make_api_req (
+              "GET",
+              util.format(
+                "/projects/%d/issues/%d",
+                wh_data.proj_id,  
+                wh_data.issue_nb[3] )
+            )
+            , function( eroor, response, body ) {
+              callback( null, body, wh_data )
+            } )
         }else{
           console.log('invalid webhook request')
         }
       },
-      function( data, wh_data, callback ){
-        issue_data = parse_data_from_issue_req ( JSON.parse( data ) )
+      function( body, wh_data, callback ){
+        issue_data = parse_data_from_issue_req ( JSON.parse( body ) )
         google_auth(function(auth){
-            callback(null, issue_data, wh_data, auth)
+          callback(null, issue_data, wh_data, auth)
         })
       },
       function(issue_data, wh_data, auth ){
@@ -118,13 +121,45 @@ var main = function( post ) {
 
       }
     ])
-  } else if ( parsed_post.object_kind == "spreadsheet_change" ){
-    async.waterfall([
-      function ( callback ){
-        // TODO
-        debugger
+  }else if(parsed_post.object_kind == "issue"){
+    if(["reopened", "opened"].indexOf(parsed_post.object_attributes.state) != -1){
+      var business_req_matches = parsed_post.object_attributes.description.match(/\# Business Requirement\s+(.*)/i)
+      if(business_req_matches && business_req_matches[1]){
+        // PASS
+      }else{
+        // CLOSE ISSUE AND COMMENT WITH SUITABLE MESSAGE
+        async.waterfall([
+          function( callback ){
+            db.get(
+              'SELECT * FROM projects WHERE project_id = "'+parsed_post.object_attributes.project_id+'"', 
+              function(err, row){
+                ACCESS_TOKEN = row.access_token 
+                callback()
+              })
+          },
+          function( callback ){
+            request(
+              make_api_req(
+                "PUT",
+                util.format(
+                  "/projects/%d/issues/%d?state_event=close",
+                  parsed_post.object_attributes.project_id,
+                  parsed_post.object_attributes.iid
+            ), {}), function(error, response, body){
+                  request(make_api_req(
+                    "POST",
+                    util.format(
+                      "/projects/%d/issues/%d/notes",
+                      parsed_post.object_attributes.project_id,
+                      parsed_post.object_attributes.id
+                  ), {
+                    body: "body=Business Requirement Missing, please use the tively issue template"
+                  } ) )
+              } )
+          }
+        ])
       }
-    ])
+    }
   }
 }
 
