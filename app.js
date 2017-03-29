@@ -127,7 +127,6 @@ var main = function( post ) {
                 wh_data.issue_nb[3] ),
               {} )
             , function( error, response, body ) {
-                
                 callback( null, JSON.parse(body), wh_data )
             } )
         }else{
@@ -150,7 +149,7 @@ var main = function( post ) {
       },
       function ( issue_data, time_stats, wh_data, callback ){
           if(time_stats.human_total_time_spent){
-              callback( null, issue_data, time_stats.human_total_time_spent, wh_data, true )
+              callback( null, issue_data, time_stats, wh_data, true )
           }else{
             request(
                 make_api_req (
@@ -163,13 +162,13 @@ var main = function( post ) {
                 function(error, response, body){
                     commits = JSON.parse(body)
                     human_spend_times = extract_commits_spend_time(commits)
-                    callback( null, issue_data, null, wh_data, false )
+                    callback( null, issue_data, human_spend_times, wh_data, false )
             } )
           }
       },
       function( issue_data, time_stats, wh_data, issue_spend_time_exists, callback ){
           if(issue_spend_time_exists){
-              callback( null, issue_data, time_stats, wh_data )
+              callback( null, issue_data, time_stats, wh_data, issue_spend_time_exists )
           }else{
               request(make_api_req(
                   "POST",
@@ -178,15 +177,15 @@ var main = function( post ) {
                       wh_data.proj_id,
                       issue_data.id
                   ), {
-                      body: "body=%2Fspend+"+time_stats.human_total_time_spent
+                      body: "body=%2Fspend+"+time_stats
                   } ), function(error, response, body){
                     console.log('INFO: Added spend time from commits to issue')
-                    callback( null, issue_data, time_stats, wh_data )
+                    callback( null, issue_data, time_stats, wh_data, issue_spend_time_exists )
               } ) 
           }
       },
-      function( issue_data, time_stats, wh_data, callback ){
-        if(time_stats){
+      function( issue_data, time_stats, wh_data, issue_spend_time_exists, callback ){
+        if(issue_spend_time_exists){
             callback( null, issue_data, time_stats, wh_data )
         }else{
           request(
@@ -278,7 +277,13 @@ var main = function( post ) {
 }
 
 app.post('/', function(req, res) {
+  console.log("INFO: Got POST request")
   execute_on_full_recieve(req, main)
+  res.send('ok')
+})
+
+app.get('/', function(req, res){
+  console.log("INFO: Got GET request")
   res.send('ok')
 })
 
