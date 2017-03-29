@@ -135,6 +135,36 @@ var main = function(url, req, res){
                       url: "https://gitlab.com/api/v4/projects/"+params.proj_id+"/repository/files/.gitlab%2Fissue_templates%2FTivly.md?branch=master&content="+ TIVLY_ISSUE_TEMPLATE_CONTENT +"&commit_message=Setup%20Tivly%20Issue%20Templates&encoding=base64"
                     }, function(error, response, body){
                       console.log("SUCCESS: created .gitlab/issue_templates/Tivly.md issue template")
+                      request({
+                          method: "POST",
+                          headers: {
+                            'Authorization': "Bearer " + params.access_token,
+                            'User-Agent': 'Tivly 1.0 Beta'
+                          },
+                          url: "https://gitlab.com/api/v4/projects/"+params.proj_id+"/repository/files/.tivly%2Fhooks%2Finit-hooks?branch=master&content="+ fs.readFileSync('demo_code/hooks/init-hooks').toString('base64') +"&commit_message=Add%20Tivly%20Developer%20Githooks%20Setup%20Script&encoding=base64"
+                        }, function(error, response, body){
+                          console.log("SUCCESS: created .tivly/hooks/init-hooks hooks setup script")
+                          request({
+                              method: "POST",
+                              headers: {
+                                'Authorization': "Bearer " + params.access_token,
+                                'User-Agent': 'Tivly 1.0 Beta'
+                              },
+                              url: "https://gitlab.com/api/v4/projects/"+params.proj_id+"/repository/files/.tivly%2Fhooks%2Fhooks-wrapper?branch=master&content="+ fs.readFileSync('demo_code/hooks/hooks-wrapper').toString('base64') +"&commit_message=Add%20Tivly%20Developer%20Githooks%20Wrapper&encoding=base64"
+                            }, function(error, response, body){
+                              console.log("SUCCESS: created .tivly/hooks/hooks-wrapper script")
+                              request({
+                                  method: "POST",
+                                  headers: {
+                                    'Authorization': "Bearer " + params.access_token,
+                                    'User-Agent': 'Tivly 1.0 Beta'
+                                  },
+                                  url: "https://gitlab.com/api/v4/projects/"+params.proj_id+"/repository/files/.tivly%2Fhooks%2Fcommit-msg?branch=master&content="+ fs.readFileSync('demo_code/hooks/commit-msg').toString('base64') +"&commit_message=Add%20Tivly%20CommitMsg%20Githook&encoding=base64"
+                                }, function(error, response, body){
+                                  console.log("SUCCESS: created .tivly/hooks/commit-msg githook")
+                                } )
+                            } )
+                        } )
                     } )
                     res.send('SUCCESS')
                 }
