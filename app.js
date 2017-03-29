@@ -99,7 +99,7 @@ var execute_on_full_recieve = function(stream, callback){
 
 var main = function( post ) {
   parsed_post = JSON.parse( post )
-  if ( parsed_post.object_kind == "merge_request" /*&& parsed_post.object_attributes.state == "merged"*/){
+  if ( parsed_post.object_kind == "merge_request" && parsed_post.object_attributes.state == "merged" ){
     console.log("INFO: Got merge request")
     async.waterfall([
       function( callback ){
