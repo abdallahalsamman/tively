@@ -81,7 +81,7 @@ var make_row = function(issue_data, wh_data){
       issue_data.business_req,
       issue_data.labels.join(', '),
       issue_data.milestone && issue_data.milestone.title || '',
-      issue_data.time_spent + '/' + issue_data.time_estimate,
+      issue_data.time_spent + '/' + (issue_data.time_estimate || "No Estimate"),
       issue_data.created_at,
     ]
   ]
@@ -99,7 +99,7 @@ var execute_on_full_recieve = function(stream, callback){
 
 var main = function( post ) {
   parsed_post = JSON.parse( post )
-  if ( parsed_post.object_kind == "merge_request" && parsed_post.object_attributes.state == "merged" ){
+  if ( parsed_post.object_kind == "merge_request" /*&& parsed_post.object_attributes.state == "merged"*/){
     console.log("INFO: Got merge request")
     async.waterfall([
       function( callback ){
@@ -139,31 +139,56 @@ var main = function( post ) {
             make_api_req (
                 "GET",
                 util.format(
+                    "/projects/%d/issues/%d/time_stats",
+                    wh_data.proj_id,  
+                    wh_data.issue_nb[3] ),
+                {} ),
+            function(error, response, body){
+                console.log('INFO: Got issue\'s time stats')
+                callback( null, issue_data, JSON.parse(body), wh_data )
+          } )
+      },
+      function ( issue_data, time_stats, wh_data, callback ){
+          if(time_stats.human_total_time_spent){
+              callback( null, issue_data, time_stats.human_total_time_spent, wh_data, true )
+          }else{
+            request(
+                make_api_req (
+                    "GET",
+                    util.format(
                     "/projects/%d/merge_requests/%d/commits",
                     wh_data.proj_id,  
                     wh_data.iid ),
                 {} ),
-            function(error, response, body){
-                commits = JSON.parse(body)
-                human_spend_times = extract_commits_spend_time(commits)
-                callback( null, issue_data, human_spend_times, wh_data )
-          } )
+                function(error, response, body){
+                    commits = JSON.parse(body)
+                    human_spend_times = extract_commits_spend_time(commits)
+                    callback( null, issue_data, null, wh_data, false )
+            } )
+          }
       },
-      function( issue_data, human_spend_times, wh_data, callback ){
-          request(make_api_req(
-              "POST",
-              util.format(
-                  "/projects/%d/issues/%d/notes",
-                  wh_data.proj_id,
-                  issue_data.id
-              ), {
-                  body: "body=%2Fspend+"+human_spend_times
-              } ), function(error, response, body){
-                console.log('INFO: Added spend time from commits to issue')
-                callback( null, issue_data, wh_data )
-          } )
+      function( issue_data, time_stats, wh_data, issue_spend_time_exists, callback ){
+          if(issue_spend_time_exists){
+              callback( null, issue_data, time_stats, wh_data )
+          }else{
+              request(make_api_req(
+                  "POST",
+                  util.format(
+                      "/projects/%d/issues/%d/notes",
+                      wh_data.proj_id,
+                      issue_data.id
+                  ), {
+                      body: "body=%2Fspend+"+time_stats.human_total_time_spent
+                  } ), function(error, response, body){
+                    console.log('INFO: Added spend time from commits to issue')
+                    callback( null, issue_data, time_stats, wh_data )
+              } ) 
+          }
       },
-      function ( issue_data, wh_data, callback ){
+      function( issue_data, time_stats, wh_data, callback ){
+        if(time_stats){
+            callback( null, issue_data, time_stats, wh_data )
+        }else{
           request(
             make_api_req (
                 "GET",
@@ -174,21 +199,22 @@ var main = function( post ) {
                 {} ),
             function(error, response, body){
                 console.log('INFO: Got issue\'s time stats')
-                callback( null, issue_data, body, wh_data )
+                callback( null, issue_data, JSON.parse(body), wh_data )
           } )
+        }
       },
-      function( issue_data, issue_time_entries_body, wh_data, callback ){
-        issue_time_entries = JSON.parse( issue_time_entries_body )
+      function( issue_data, time_stats, wh_data, callback ){
         google_auth(function(auth){
           console.log('INFO: Got google auth')
           callback (
               null,
-              parse_data_from_issue_req(issue_data, issue_time_entries),
+              parse_data_from_issue_req(issue_data, time_stats),
               wh_data,
               auth ) } )
       },
       function(issue_data, wh_data, auth ){
-        var sheets = google.sheets('v4');
+        var sheets = google.sheets('v4')
+        var values = make_row(issue_data, wh_data)
         var request =  {
           auth: auth,
           spreadsheetId: SPREADSHEET_ID,
@@ -196,12 +222,12 @@ var main = function( post ) {
           valueInputOption: 'USER_ENTERED',
           insertDataOption: 'INSERT_ROWS',
           resource: {
-            values: make_row(issue_data, wh_data)
+            values: values
           }
         }
         console.log('INFO: Adding row to spreadsheet')
+        console.log(values)
         sheets.spreadsheets.values.append(request)
-
       }
     ])
   }else if(parsed_post.object_kind == "issue"){
@@ -210,9 +236,7 @@ var main = function( post ) {
       var business_req_matches = parsed_post.object_attributes.description.match(/\# Business Requirement\s+(.*)/i)
       if(business_req_matches && business_req_matches[1]){
         console.log('INFO: Issue got business requirement')
-        // PASS
       }else{
-        // CLOSE ISSUE AND COMMENT WITH SUITABLE MESSAGE
         console.log('INFO: Issue got NO business requirement')
         async.waterfall([
           function( callback ){
