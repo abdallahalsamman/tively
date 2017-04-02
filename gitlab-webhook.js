@@ -10,7 +10,7 @@ var sqlite3 = require('sqlite3').verbose()
 var db = new sqlite3.Database('db.sqlite3')
 
 const HOST = "https://gitlab.com"
-const SPREADSHEET_ID = "1CYdoGIl6aBTsJIuFiF2dzD_nx-GXzsxuUr-yFxlBqrA"
+var SPREADSHEET_ID;
 var ACCESS_TOKEN;
 
 var make_api_req = function(method, url, acc){
@@ -108,6 +108,7 @@ var main = function( post ) {
           function(err, row){
             if (row && row.access_token){
               ACCESS_TOKEN = row.access_token
+              SPREADSHEET_ID = row.spreadsheet_id
               console.log("INFO: Got access token")
               callback( null )
             }else{

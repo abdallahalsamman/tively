@@ -4,9 +4,11 @@ var request = require('request')
 var util = require('util')
 var async = require('async')
 var fs = require('fs')
+var google = require('googleapis');
+var google_auth = require('./quickstart')
 var sqlite3 = require('sqlite3').verbose()
 var db = new sqlite3.Database('db.sqlite3')
-db.run('CREATE TABLE IF NOT EXISTS projects (project_id TEXT, access_token TEXT)')
+db.run('CREATE TABLE IF NOT EXISTS projects (project_id TEXT, spreadsheet_id TEXT, access_token TEXT)')
 
 var gitlab_webhook = require('./gitlab-webhook')
 
@@ -73,27 +75,26 @@ var main = function(url, req, res){
       },
       function ( auth_info ) {
         request(
-          make_api_get_req('https://gitlab.com/api/v4/projects?owned=true', body["access_token"]),
+          make_api_get_req('https://gitlab.com/api/v4/projects?owned=true', auth_info["access_token"]),
           function(err, resp, projs_body){
             if(err){
               console.log('ERROR: can\'t get projects owned by user')
             }else{
               projs_body = JSON.parse(projs_body)
               console.log('INFO: got projects owned by user... rendering')
-              res.render('choose-project', {token: body["access_token"], projs_body: projs_body})
+              res.render('choose-project', {token: auth_info["access_token"], projs_body: projs_body})
         } } )
       }
     ])
   }else if(url == '/hook-project'){
     params = req.query
+    proj_obj = JSON.parse(params.proj_info)
     console.log('INFO: got request to hook project')
-    db.run('INSERT INTO projects VALUES ("'+params.proj_id+'", "'+params.access_token+'")')
-
     async.waterfall([
       function ( callback ) {
         request({
             method: "PUT",
-            url: "https://gitlab.com/api/v4/projects/"+params.proj_id,
+            url: "https://gitlab.com/api/v4/projects/"+proj_obj.id,
             headers: {
               'Authorization': "Bearer " + params.access_token,
               'User-Agent': 'Tivly 1.0 Beta'
@@ -117,7 +118,7 @@ var main = function(url, req, res){
             },
             url: util.format(
                 "https://gitlab.com/api/v4/projects/%d/hooks?url=%s&merge_requests_events=true&issues_events=true&push_events=false&enable_ssl_verification=false",
-                params.proj_id,
+                proj_obj.id,
                 WEBHOOK_URL
         ) }, function(err, resp, add_hook_body){
             if (err){
@@ -135,7 +136,7 @@ var main = function(url, req, res){
                 'User-Agent': 'Tivly 1.0 Beta'
             },
             url: "https://gitlab.com/api/v4/projects/" + 
-              params.proj_id + 
+              proj_obj.id + 
               "/repository/files/.gitlab%2Fissue_templates%2FTivly.md?branch=master&content=" + 
               TIVLY_ISSUE_TEMPLATE_CONTENT + 
               "&commit_message=Setup%20Tivly%20Issue%20Templates&encoding=base64"
@@ -152,7 +153,7 @@ var main = function(url, req, res){
                 'User-Agent': 'Tivly 1.0 Beta'
             },
             url: "https://gitlab.com/api/v4/projects/" + 
-              params.proj_id + 
+              proj_obj.id + 
               "/repository/files/.tivly%2Fhooks%2Finit-hooks?branch=master&content=" + 
               fs.readFileSync('demo_code/hooks/init-hooks').toString('base64') + 
               "&commit_message=Add%20Tivly%20Developer%20Githooks%20Setup%20Script&encoding=base64"
@@ -169,7 +170,7 @@ var main = function(url, req, res){
                 'User-Agent': 'Tivly 1.0 Beta'
             },
             url: "https://gitlab.com/api/v4/projects/" + 
-              params.proj_id + 
+              proj_obj.id + 
               "/repository/files/.tivly%2Fhooks%2Fhooks-wrapper?branch=master&content=" + 
               fs.readFileSync('demo_code/hooks/hooks-wrapper').toString('base64') + 
               "&commit_message=Add%20Tivly%20Developer%20Githooks%20Wrapper&encoding=base64"
@@ -186,7 +187,7 @@ var main = function(url, req, res){
                 'User-Agent': 'Tivly 1.0 Beta'
             },
             url: "https://gitlab.com/api/v4/projects/" + 
-              params.proj_id+"/repository/files/.tivly%2Fhooks%2Fcommit-msg?branch=master&content=" + 
+              proj_obj.id+"/repository/files/.tivly%2Fhooks%2Fcommit-msg?branch=master&content=" + 
               fs.readFileSync('demo_code/hooks/commit-msg').toString('base64') + 
               "&commit_message=Add%20Tivly%20CommitMsg%20Githook&encoding=base64"
         }, function(error, response, body){
@@ -201,7 +202,7 @@ var main = function(url, req, res){
               'Authorization': "Bearer " + params.access_token,
               'User-Agent': 'Tivly 1.0 Beta'
             },
-            url: "https://gitlab.com/api/v4/projects/"+params.proj_id+"/repository/files/.gitlab-ci.yml?branch=master&content="+ GITLAB_CI_YML_CONTENT +"&commit_message=Setup%20Tivly&encoding=base64"
+            url: "https://gitlab.com/api/v4/projects/"+proj_obj.id+"/repository/files/.gitlab-ci.yml?branch=master&content="+ GITLAB_CI_YML_CONTENT +"&commit_message=Setup%20Tivly%20%2Fspend%201m&encoding=base64"
         }, function(err, resp, add_hook_body){
             if (err){
                 console.log("ERROR: couldn't create .gitlab-ci.yml pipeline config")
@@ -211,8 +212,53 @@ var main = function(url, req, res){
             }
         })
       },
-      function () {
-        res.send('SUCCESS')
+      function( callback ){
+        google_auth(function(auth){
+          console.log('INFO: Got google auth')
+          callback ( null, auth ) } )
+      },
+      function( auth, callback ){
+        var sheets = google.sheets('v4')
+        var request = {
+          resource: {
+            properties: {
+              title: 'Projectivly: ' + proj_obj.name
+            }
+          },
+          auth: auth
+        };
+
+        sheets.spreadsheets.create(request, function(err, response) {
+          if (err) {
+            console.log(err);
+            return;
+          }
+          callback( null, response, auth )
+        });
+      },
+      function ( response, auth, callback ) {
+          var drive = google.drive({
+            version: 'v3',
+            auth: auth
+          });
+          drive.permissions.create({
+            fileId: response.spreadsheetId,
+            resource: {
+              role: 'writer',
+              type: 'anyone'
+            }
+          }, function(err, resp) {
+            drive.permissions.update({
+              fileId: response.spreadsheetId,
+              permissionId: resp.id,
+            }, function(err , resp){
+              callback( null, response )
+            })
+          })
+      },
+      function ( spreadsheet_obj ) {
+        db.run('INSERT INTO projects VALUES ("'+proj_obj.id+'", "'+ spreadsheet_obj.spreadsheetId +'","'+params.access_token+'")')
+        res.send('Bookmark this: <a href="'+spreadsheet_obj.spreadsheetUrl+'" >Spreadsheet</a>')
       }
     ])
   }
