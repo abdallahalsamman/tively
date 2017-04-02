@@ -35,15 +35,15 @@ var extract_commits_spend_time = function(commits){
           }else if(spend_time[1].indexOf('m') != -1){
             minutes = spend_time[1].split('m')[0]
           }
-          
+
           return parseInt(hours) * 60 + parseInt(minutes)
         }
     })
-        
+
     minutes_added = commits_minutes_spend.reduce(function(acc, curr){
         return curr + acc
     }, 0)
-    
+
     hours = Math.floor(minutes_added / 60)
     minutes = Math.floor(minutes_added % 60)
     return util.format('%dh%dm', hours, minutes)
@@ -104,14 +104,14 @@ var main = function( post ) {
     async.waterfall([
       function( callback ){
         db.get(
-          'SELECT * FROM projects WHERE project_id = "'+parsed_post.object_attributes.source_project_id+'"', 
+          'SELECT * FROM projects WHERE project_id = "'+parsed_post.object_attributes.source_project_id+'"',
           function(err, row){
             if (row && row.access_token){
-              ACCESS_TOKEN = row.access_token 
+              ACCESS_TOKEN = row.access_token
               console.log("INFO: Got access token")
               callback( null )
             }else{
-              console.log('Error: Couldn\'t get access token')   
+              console.log('Error: Couldn\'t get access token')
             }
           })
       },
@@ -123,7 +123,7 @@ var main = function( post ) {
               "GET",
               util.format(
                 "/projects/%d/issues/%d",
-                wh_data.proj_id,  
+                wh_data.proj_id,
                 wh_data.issue_nb[3] ),
               {} )
             , function( error, response, body ) {
@@ -139,7 +139,7 @@ var main = function( post ) {
                 "GET",
                 util.format(
                     "/projects/%d/issues/%d/time_stats",
-                    wh_data.proj_id,  
+                    wh_data.proj_id,
                     wh_data.issue_nb[3] ),
                 {} ),
             function(error, response, body){
@@ -156,7 +156,7 @@ var main = function( post ) {
                     "GET",
                     util.format(
                     "/projects/%d/merge_requests/%d/commits",
-                    wh_data.proj_id,  
+                    wh_data.proj_id,
                     wh_data.iid ),
                 {} ),
                 function(error, response, body){
@@ -181,7 +181,7 @@ var main = function( post ) {
                   } ), function(error, response, body){
                     console.log('INFO: Added spend time from commits to issue')
                     callback( null, issue_data, time_stats, wh_data, issue_spend_time_exists )
-              } ) 
+              } )
           }
       },
       function( issue_data, time_stats, wh_data, issue_spend_time_exists, callback ){
@@ -193,7 +193,7 @@ var main = function( post ) {
                 "GET",
                 util.format(
                     "/projects/%d/issues/%d/time_stats",
-                    wh_data.proj_id,  
+                    wh_data.proj_id,
                     wh_data.issue_nb[3] ),
                 {} ),
             function(error, response, body){
@@ -240,7 +240,7 @@ var main = function( post ) {
         async.waterfall([
           function( callback ){
             db.get(
-              'SELECT * FROM projects WHERE project_id = "'+parsed_post.object_attributes.project_id+'"', 
+              'SELECT * FROM projects WHERE project_id = "'+parsed_post.object_attributes.project_id+'"',
               function(err, row){
                 ACCESS_TOKEN = row.access_token
                 console.log("INFO: Got access token")
@@ -275,6 +275,7 @@ var main = function( post ) {
     }
   }
 }
+module.exports = main
 
 app.post('/', function(req, res) {
   console.log("INFO: Got POST request")
