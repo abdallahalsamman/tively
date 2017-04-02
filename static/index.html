@@ -1,1 +1,316 @@
-<a href="https://gitlab.com/oauth/authorize?client_id=6b7979bc2dbd78444592e30d624aa37cc0fc2c9145f3af44f1f70f5c4adbf21d&redirect_uri=http://bahama-agenda-3000.codio.io/oauth-gitlab&response_type=code&state=success">Authenticate with Gitlab</a>
+<!DOCTYPE html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <!--[if IE]>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <![endif]-->
+    
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    
+    <!-- Mobile Specific -->
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    
+    <!-- Favicons Icon -->
+    <link rel="icon" href="images/favicon.ico" type="image/x-icon" />
+	
+    <title>Tivly</title>
+    
+    <!-- CSS Styles -->
+    <link rel="stylesheet" type="text/css" href="css/animate.css" />
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.css" />
+    <link rel="stylesheet" type="text/css" href="css/font-awesome.css" />
+    <link rel="stylesheet" type="text/css" href="css/owl.carousel.css" />
+    <link rel="stylesheet" type="text/css" href="css/owl.theme.css" />
+    <link rel="stylesheet" type="text/css" href="css/jquery.fancybox.css" />
+    
+    <link rel="stylesheet" type="text/css" href="css/style.css" />
+    <link rel="stylesheet" type="text/css" href="css/d3_style.css" />
+    <link rel="stylesheet" type="text/css" href="css/reset.css" />
+    <link rel="stylesheet" type="text/css" href="css/modal.css" />
+
+    <!-- facebook thumbnail stuff-->
+    <meta property="og:site_name" content="Tivly"/>
+    <meta property="og:title" content="How does Tivly work"/>
+    <meta property="og:title" content="How does Tivly work"/>
+    <meta property="og:image" content="http://tivly.lobolabshq.com/images/tivly_square_logo.png">
+    <meta property="og:url" content="http://tivly.lobolabshq.com/">
+
+    
+    <!-- Google Fonts -->
+    <link href='https://fonts.googleapis.com/css?family=Roboto:400,100,300,500,700,900|Raleway:400,100,200,300,500,600,700,800,900' rel='stylesheet' type='text/css' />
+
+    <!-- google analytics -->
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+          })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-93588214-1', 'auto');
+    ga('send', 'pageview');
+
+    </script>
+
+    <!-- Facebook Pixel Code -->
+    <script>
+		!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+			n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+		n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+		t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+				document,'script','https://connect.facebook.net/en_US/fbevents.js');
+		fbq('init', '1121963224581588'); // Insert your pixel ID here.
+		fbq('track', 'PageView');
+	</script>
+
+	<!-- Hotjar Tracking Code for http://tivly.lobolabshq.com -->
+	<script>
+		(function(h,o,t,j,a,r){
+			h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
+			h._hjSettings={hjid:445583,hjsv:5};
+			a=o.getElementsByTagName('head')[0];
+			r=o.createElement('script');r.async=1;
+			r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
+			a.appendChild(r);
+		})(window,document,'//static.hotjar.com/c/hotjar-','.js?sv=');
+	</script>
+    <noscript><img height="1" width="1" style="display:none"
+        src="https://www.facebook.com/tr?id=1121963224581588&ev=PageView&noscript=1"
+        /></noscript>
+    <!-- DO NOT MODIFY -->
+    <!-- End Facebook Pixel Code -->
+
+    
+</head>
+
+<body class="cms_index">
+	<!-- Header Start -->
+	<div id="header">    	
+        <div class="mainnav">
+        	<div class="container">
+                <!-- Logo Start -->
+                <div class="logo col-md-2 col-sm-8 col-xs-8">
+                    <a class="text_logo" href="#header"><img src="images/tivly_logo.png" /></a>
+                </div>
+                <!-- Logo End -->
+                
+                <!-- Menu Start -->
+                <div class="col-md-10 col-sm-4 col-xs-4">
+                    <a id="offcanvas_toggler" class="visible-sm visible-xs" href="#"><i class="fa fa-bars"></i></a>
+                    <div class="main_navigation">
+                        <ul>
+                            <li><a class="h_menu" href="#overview">Overview</a></li>
+                            <li><a class="h_menu" href="#how_it_works">How it Works</a></li>
+                            <li><a class="h_menu" href="#about_us">About Us</a></li>
+                            <li><a href="/start_now">Start Now</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <!-- Menu End -->
+            </div>
+        </div>
+        
+        <div class="container">
+            <!-- Header Content Start -->
+            <div class="header_content">
+            	<h1><span>TIVLY</span> gives you control over the development of your software</h1>
+                <form id="postEmail">
+                    <input required type="email" name="email" id="d3_email" value="E-mail Address" onfocus="if(this.value=='E-mail Address') this.value='';" />
+                    <button type="submit" class="btn get_started_btn">Sign me up</button>
+                </form>
+            </div>
+            <!-- Header Content End -->
+        </div>
+    </div>
+
+	<!-- The Modal -->
+	<div id="myModal" class="modal">
+
+	  <!-- Modal content -->
+	  <div class="modal-content">
+        <p><iframe id="google_form" width = "100%" max-width="760" height="550" frameborder="0" marginheight="0" marginwidth="0">Loading...</iframe></p>
+	  </div>
+
+	</div>
+    <!-- Header End -->
+    
+    <!-- Content Start -->
+	<div class="content_wrapper">
+    	<!-- Overview Start -->
+        <div id="overview">
+        	<div class="container">
+                <div class="overview_wrap">
+                	<div class="col-md-4 col-sm-4 col-xs-12">
+                    	<div class="overview_display_block">
+                            <div class="icon_box">
+                            	<i class="fa fa-money"></i>
+                            </div>
+                            <h3>You get what you pay for</h3>
+                            <p>Every item the outsourcing company charges you for in your invoice will list a clear Business Deliverable</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-sm-4 col-xs-12">
+                    	<div class="overview_display_block">
+                            <div class="icon_box">
+                            	<i class="fa fa-code"></i>
+                            </div>
+                            <h3>Business Deliverables are linked to code</p>
+                            <p>Every item in the invoice will be tracked to an issue in the code management tool used by the outsourcing company (ie Gitlab, Github, Bitbucket etc).</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-sm-4 col-xs-12">
+                    	<div class="overview_display_block">
+                            <div class="icon_box">
+                            	<i class="fa fa-handshake-o"></i>
+                            </div>
+                            <h3>You win, The engineers win</h3>
+                            <p>You will know where your money is going, and engineers will make sure that they're working on what you want, not what they think you want. Money makes everyone honest</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Overview End -->
+        
+        <div id="how_it_works" class="even_div">
+        	<div id="main">
+                <div id="main-content">
+                    <div class="main workflow">
+                        <div class="content">                
+                                <div class="icon">
+                                    <h2>How it works</h2>
+                                    <p>Start and end with the same software you use to invoice the outsourcing companies anywyas: the spreadsheet!</p>
+                                </div>                
+                                <ul id="flow-switcher">
+                                    <li class="active"><span>Create requirements</span></li>
+                                    <li><span>Link it with issue tracker</span></li>
+                                    <li><span>See <br>changed files</span></li>
+                                    <li><span>Track hours worked</span></li>
+                                    <li><span>Make high level Analysis</span></li>
+                                </ul>                
+                            </div>
+                            
+                        <div id="flow-boxes">                
+                            <div class="boxes active">
+                                <div class="codebox-container active">
+                                    <div class="codebox active">
+                                        <img src="images/accounting03.png">
+                                    </div>
+                                                   
+                                    <div class="codebox hiddenRight">
+                                        <img src="images/githubissue01.png">
+                                    </div>
+                                                    
+                                    <div class="codebox hiddenRight">
+                                        <img src="images/changedFiles01.png">
+                                    </div>
+                                          
+                                    <div class="codebox hiddenRight">
+                                        <img src="images/time_tracking02.png">
+                                    </div>
+
+                                    <div class="codebox hiddenRight">
+                                        <img src="images/estimated_left.png">
+                                    </div>
+                                </div>
+                                                
+                                <div class="text-container">
+                                    <div class="text three-lines active">
+                                        <h3>Create requirements</h3>
+                                        <p>Start off by creating requirements on a spreadsheet. Each row in a spreadsheet will link to an issue in the  code management tool used by the outsourcing company such as <code>Github</code>, <code>Gitlab</code> or <code>Bitbucket</code></p>
+                                    </div>
+                                    <div class="text four-lines hiddenRight">
+                                        <h3>Link requirement with issue tracker</h3>
+                                        <p>
+                                           You can jump immediately from the spreadsheet to the corresponding issue in the issue tracker the developers will be using, and see/edit the detailed requirements yourself  
+                                        </p>
+                                    </div>                
+                                    <div class="text four-lines hiddenRight">
+                                        <h3>See changed files</h3>
+                                        <p>You can trace the files and exact lines of code changes back to the issue in the issue tracker (which in turn is traced to business requirement). You may not understand the changes, but any tech person you hire can. Keep the developers honest!</p>
+                                    </div>                
+                                    <div class="text three-lines hiddenRight">
+                                        <h3>Track hours worked</h3>
+                                        <p>Engineers will add how many hours they spent on each issue on the issue tracker, and that will be immediately visible on the spreadshet</p>
+                                    </div>
+                                </div>
+                            </div>                
+                            <div class="end" id="automatic-renewals">
+                                <div class="text three-lines">
+                                    <h3>Make high level Analysis</h3>
+                                    <p>You can view how much percent of the project has been done in specific categories, measure that against the estimated time given by the consulting company, estimate how much work is left given the current development speed and much more</p>
+                                </div>
+                            </div>                
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+     <!-- Screenshot Start -->
+        <div id="about_us">
+        	<div class="container">
+            	<h2>About us</h2>
+                <div class="text">
+                	<p>Tivly is brought to you by the the <a href="http://lobolabshq.com">LoboLabs</a> team. We have years experience in structuring and scaling teams. Tivly is all about packaging and automating our exeprience so that you don't have to repeat the mistakes we did</p> 
+                </div>
+			</div>
+		</div>
+                
+        <!-- Footer Start -->
+        <div id="footer">
+        	<div class="container">
+            	<div class="col-lg-6 col-md-6 col-sm-8 col-xs-8 coppyright"> &copy; TIVLY 2017. All Rights Reserved.</a> </div>
+                <div class="social col-lg-6 col-md-6 col-sm-4 col-xs-4">
+                    <ul class="social_links">
+                        <li><a href="https://www.facebook.com/tivly.lobolabshq/"><i class="fa fa-facebook"></i></a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <!-- Footer End -->
+    </div>
+    <!-- Content End -->
+    
+    <!-- Offcanvas Menu Start -->
+    <div class="offcanvas_menu">
+        <a href="#" class="close_offcanvas"><i class="fa fa-remove"></i></a>
+        <div class="offcanvas_inner">
+            <div class="sp_module">
+                <h3 class="sp_module_title">Startup</h3>
+                <div class="sp_module_content">
+                    <ul class="nav menu">
+                        <li><a class="h_menu" href="#overview">Overview</a></li>
+                        <li><a class="h_menu" href="#how_it_works">How it Works</a></li>
+                        <li><a class="h_menu" href="#about_us">About Us</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="offcanvas_overlay"></div>
+    <!-- Offcanvas Menu End -->
+        
+    <!-- JavaScript -->
+    <script type="text/javascript" src="js/coatFlow.js"></script>
+    <script type="text/javascript" src="js/subscriptions.js"></script>
+    <script type="text/javascript" src="js/jquery.js"></script>   
+    
+	<script type="text/javascript">
+        startFlowSwitcher();
+    </script>
+    
+    <script type="text/javascript" src="js/jquery-2.1.1.js"></script>
+    <script type="text/javascript" src="js/jquery.form.min.js"></script>    
+    <script type="text/javascript" src="js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="js/owl.carousel.min.js"></script>
+    <script type="text/javascript" src="js/js-functions.js"></script>    
+    
+    <script type="text/javascript" src="js/scripts.js"></script>
+    <script type="text/javascript" src="js/postToSheet.js"></script>   
+    <script type="text/javascript" src="js/carousel-3d.js"></script>
+    <script type="text/javascript" src="js/jquery.carouFred.js"></script>
+    <script type="text/javascript" src="js/jquery.fancybox.js"></script>
+    <script type="text/javascript" src="js/adWords.js"></script>
+</body>
+</html>

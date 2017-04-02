@@ -15,10 +15,10 @@ var gitlab_webhook = require('./gitlab-webhook')
 const GITLAB_CI_YML_CONTENT = fs.readFileSync('demo_code/gitlab-pipeline/gitlab-ci.yml').toString('base64')
 const TIVLY_ISSUE_TEMPLATE_CONTENT = fs.readFileSync('demo_code/issue_templates/tivly.md').toString('base64')
 
-const REDIRECT_URL = "http://bahama-agenda-3000.codio.io/oauth-gitlab"
-const CLIENT_SECRET = "b713ec666614a6f06ae2c15d06117cf8d76a33398fa9108e69653665b7f5845b"
-const CLIENT_ID = "6b7979bc2dbd78444592e30d624aa37cc0fc2c9145f3af44f1f70f5c4adbf21d"
-const WEBHOOK_URL = "http://bahama-agenda-3001.codio.io/"
+const REDIRECT_URL = "http://tivly.lobolabshq.com/oauth-gitlab"
+const CLIENT_SECRET = "5a9a70eba6ac81e7896941621fad48b676e86004e8ae668f9a342bf05e6309e4"
+const CLIENT_ID = "fe638f1d649943378c0e76a7db3a2bd7ee818abc8db4fca58e81fd26b78ea0d7"
+const WEBHOOK_URL = "http://tivly.lobolabshq.com/"
 
 var make_api_set_status_req = function(owner, repo_name, commit_sha, data){
   return {
@@ -222,7 +222,7 @@ var main = function(url, req, res){
         var request = {
           resource: {
             properties: {
-              title: 'Projectivly: ' + proj_obj.name
+              title: proj_obj.name
             }
           },
           auth: auth
@@ -270,6 +270,10 @@ app.get('/oauth-gitlab', function(req, res) {
 
 app.get('/hook-project', function(req, res){
   main('/hook-project', req, res)
+})
+
+app.get('/start_now', function(req, res) {
+  res.render('start')
 })
 
 app.post('/', function(req, res) {

@@ -278,6 +278,7 @@ var main = function( post ) {
 }
 module.exports = main
 
+/*
 app.post('/', function(req, res) {
   console.log("INFO: Got POST request")
   execute_on_full_recieve(req, main)
@@ -290,3 +291,4 @@ app.get('/', function(req, res){
 })
 
 app.listen(3001)
+*/
