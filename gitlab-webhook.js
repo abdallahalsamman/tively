@@ -99,7 +99,7 @@ var execute_on_full_recieve = function(stream, callback){
 
 var main = function( post ) {
   parsed_post = JSON.parse( post )
-  if ( parsed_post.object_kind == "merge_request" && parsed_post.object_attributes.state == "merged" ){
+  if ( parsed_post.object_kind == "merge_request" && ["opened", "reopened"].indexOf(parsed_post.object_attributes.state) != -1 ){
     console.log("INFO: Got merge request")
     async.waterfall([
       function( callback ){
@@ -132,6 +132,17 @@ var main = function( post ) {
             } )
         }else{
           console.log('Error: Merge request doesn\'t have fixed issue in description')
+          request(make_api_req(
+                  "POST",
+                  util.format(
+                      "/projects/%d/merge_requests/%d/notes",
+                      wh_data.proj_id,
+                      wh_data.id
+                  ), {
+                      body: "body=Error: Merge request doesn't have fixed issue in description"
+                  } ), function(error, response, body){
+                    console.log('INFO: Added error message in comment')
+              } )
         }
       },
       function ( issue_data, wh_data, callback ){
@@ -227,7 +238,9 @@ var main = function( post ) {
         }
         console.log('INFO: Adding row to spreadsheet')
         console.log(values)
-        sheets.spreadsheets.values.append(request)
+        if(parsed_post.object_attributes.state == "merged"){
+          sheets.spreadsheets.values.append(request)
+        }
       }
     ])
   }else if(parsed_post.object_kind == "issue"){

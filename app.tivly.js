@@ -213,9 +213,15 @@ var main = function(url, req, res){
         })
       },
       function( callback ){
-        google_auth(function(auth){
-          console.log('INFO: Got google auth')
-          callback ( null, auth ) } )
+        db.get('SELECT * FROM projects where project_id = "'+proj_obj.id+'"', function(err, row){
+	  if ( row ){
+	    res.send('Bookmark this: <a href="https://docs.google.com/spreadsheets/d/' + row.spreadsheet_id + '" >Spreadsheet</a>')
+	  }else{
+            google_auth(function(auth){
+              console.log('INFO: Got google auth')
+              callback ( null, auth ) } )
+	  }
+	})
       },
       function( auth, callback ){
         var sheets = google.sheets('v4')
