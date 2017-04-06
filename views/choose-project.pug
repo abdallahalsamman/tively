@@ -1,6 +1,6 @@
 form(action="/hook-project", method="get")
   input(type="hidden", name="access_token", value=token)
-  select(name="proj_id")
+  select(name="proj_info")
     each val in projs_body
-      option(value=val.id)= val.path_with_namespace
+      option(value=val)= val.path_with_namespace
   button(type="submit") Hook Project
